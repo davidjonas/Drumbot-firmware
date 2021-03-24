@@ -62,7 +62,7 @@ void setup()
   availableNotes = ARRAY_SIZE(notes);
 
   MIDI.setHandleNoteOn(handleNoteOn);
-  MIDI.setHandleNoteOff(handleNoteOff);
+  //MIDI.setHandleNoteOff(handleNoteOff);
   MIDI.begin(MIDI_CHANNEL_OMNI);
 
   for(int i=0; i<availableNotes; i++)

@@ -15,6 +15,8 @@ int onCycles [] = {0,  0,  0,  0,  0,  0, 0};
 int securityLimit = 90000;
 int availableNotes = 0;
 bool programmingMode = false;
+int maxDuration = 2000;
+int minDuration = 1000;
 
 void reset()
 {
@@ -34,24 +36,26 @@ void handleNoteOn(byte channel, byte pitch, byte velocity)
     }
     else{
       int pin = -1;
-  
-      for(int i=0; i<availableNotes; i++)
-      {
-        if(notes[i] == pitch)
+
+      if(velocity > 0){
+        for(int i=0; i<availableNotes; i++)
         {
-          pin = pins[i];
-          onCycles[i] = 1;
-          break;
+          if(notes[i] == pitch)
+          {
+            pin = pins[i];
+            onCycles[i] = map((int)velocity, 1, 127, minDuration, maxDuration);
+            break;
+          }
+        }
+  
+        if (pin > 0) {
+          digitalWrite(pin,HIGH);
         }
       }
-
-      if (pin > 0) {
-        digitalWrite(pin,HIGH);
-      }
     }
-
 }
 
+//Never called right now
 void handleNoteOff(byte channel, byte pitch, byte velocity)
 {
   int pin;
@@ -76,7 +80,7 @@ void setup()
   availableNotes = ARRAY_SIZE(notes);
 
   MIDI.setHandleNoteOn(handleNoteOn);
-  MIDI.setHandleNoteOff(handleNoteOff);
+  //MIDI.setHandleNoteOff(handleNoteOff);
   MIDI.begin(MIDI_CHANNEL_OMNI);
 
   pinMode(EXTRA_POWER_PIN,OUTPUT);
@@ -115,32 +119,23 @@ void programNotes(int base_note){
   }
 }
 
-void securityCheck()
+void delayCheck()
 {
+    bool playingNote = false;
+    
     for(int i=0; i<availableNotes; i++)
     {
       if(onCycles[i] > 0)
       {
-        onCycles[i] = onCycles[i] + 1;
+        onCycles[i]--;
+        playingNote = true;
       }
-
-      if(onCycles[i] > securityLimit)
+      else
       {
         digitalWrite(pins[i],LOW);
         onCycles[i] = 0;
-        return;
       }
     }
-
-    bool playingNote = false;
-    for(int i=0; i<availableNotes; i++)
-    {
-      if(onCycles[i] > 0)
-      {
-        playingNote = true;
-      }
-    }
-
     digitalWrite(GREEN_LED, playingNote);
 }
 
@@ -153,6 +148,6 @@ void buttonCheck(){
 void loop()
 {
     MIDI.read();
-    securityCheck();
+    delayCheck();
     buttonCheck();
 }
